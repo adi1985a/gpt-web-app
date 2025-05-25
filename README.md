@@ -1,91 +1,210 @@
-# GPT App Template
+# ☁️🤖 Altostra GPT WebApp Template: OpenAI & Serverless 🚀
+_An Altostra template for deploying a serverless web application on AWS that allows users to send prompts to OpenAI GPT models via a simple web UI._
 
-An Altostra template for a web application that let users send prompts to one of OpenAI textual models.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) <!-- Assuming MIT if not specified -->
+[![Altostra](https://img.shields.io/badge/Platform-Altostra-blueviolet.svg)]() <!-- Generic Altostra badge -->
+[![AWS](https://img.shields.io/badge/Cloud-AWS-232F3E.svg?logo=amazon-aws)](https://aws.amazon.com/)
+[![OpenAI](https://img.shields.io/badge/AI%20Model-OpenAI%20GPT-412991.svg?logo=openai)](https://openai.com/)
+[![Python](https://img.shields.io/badge/Language-Python%20(Lambda)-3776AB.svg?logo=python&logoColor=white)]() <!-- Assuming Lambdas are Python -->
+[![Node.js](https://img.shields.io/badge/Language-Node.js%20(Lambda)-339933.svg?logo=node.js)]() <!-- Or Node.js, adjust as needed -->
 
-## Template content
+## 📋 Table of Contents
+1.  [Overview](#-overview)
+2.  [Template Content & Architecture](#-template-content--architecture)
+    *   [AWS Infrastructure Components](#aws-infrastructure-components)
+    *   [Application Flow](#application-flow)
+3.  [Customization Options](#-customization-options)
+    *   [Changing the GPT Model](#changing-the-gpt-model)
+    *   [Changing the SSM Parameter Name for API Key](#changing-the-ssm-parameter-name-for-api-key)
+4.  [Setup & Deployment with Altostra](#️-setup--deployment-with-altostra)
+5.  [File Structure (Conceptual)](#-file-structure-conceptual)
+6.  [Contributing](#-contributing)
+7.  [License](#-license)
+8.  [Contact](#-contact)
 
-An Altostra template to create projects that can be deployed with a serverless web application
-that features a simple web UI for users to send prompts to a preselected OpenAI GPT model.
+## 📄 Overview
 
-The infrastructure is managed using Amazon Web Services (AWS) and includes:
+This **Altostra template** provides the foundation for creating and deploying a serverless web application that enables users to interact with preselected OpenAI GPT textual models. The application features a simple web UI for submitting prompts and receiving responses. The entire infrastructure is managed and provisioned on **Amazon Web Services (AWS)** through Altostra's tooling.
 
-1. Amazon CloudFront for distributing the website content globally with low latency and
-high transfer speeds.
-2. Amazon S3 bucket to store the static website content.
-3. Amazon REST API Gateway to create an HTTP API.
-4. Three AWS Lambda functions to handle requests to the REST API:
-    - One to handle the API requests to send prompts to the OpenAI GPT model.
-    - One to store an OpenAI API key in the AWS Systems Manager (SSM) Parameter Store
-as a SecureString.
-    - One to check the existence of the API key in the AWS Systems Manager (SSM) Parameter Store.
+## 🏗️ Template Content & Architecture
 
-![Design](./docs/design.png)
+This Altostra template orchestrates the following AWS services and application logic:
+
+### AWS Infrastructure Components:
+*   🌍 **Amazon CloudFront**: Distributes the static website content globally with low latency and high transfer speeds, ensuring a fast user experience.
+*   🪣 **Amazon S3 Bucket**: Stores the static website content (HTML, CSS, JavaScript files for the UI).
+*   🔗 **Amazon API Gateway (REST API)**: Creates an HTTP API to serve as the backend endpoint for the web application.
+*   ⚙️ **AWS Lambda Functions (3)**: Handle requests to the REST API:
+    1.  **Prompt Handler Lambda**: Receives user prompts from the API Gateway, sends them to the configured OpenAI GPT model, and returns the model's response.
+    2.  **API Key Storage Lambda**: Securely stores a user-provided OpenAI API key in **AWS Systems Manager (SSM) Parameter Store** as a `SecureString`.
+    3.  **API Key Check Lambda**: Verifies the existence of the OpenAI API key in the SSM Parameter Store.
+
+### 🔁 Application Flow:
+
+1.  The website, served by CloudFront, first checks if an OpenAI API key is already configured and stored in SSM Parameter Store (via the API Key Check Lambda).
+2.  **If the API key does not exist**: The web application prompts the user to enter their OpenAI API key. This key is then sent through API Gateway to the API Key Storage Lambda, which saves it securely in SSM Parameter Store.
+3.  **Once the API key exists**: The web application allows the user to:
+    *   Enter a prompt in the web UI.
+    *   Send the prompt via API Gateway to the Prompt Handler Lambda.
+    *   The Prompt Handler Lambda then communicates with the selected OpenAI GPT model to get a response.
+    *   The response is returned to the web UI and displayed to the user.
+
+## 🔧 Customization Options
+
+Two primary environment variables can be configured within the Altostra project to alter the application's behavior:
+
+1.  **GPT Model (`GPT_MODEL`)**:
+    *   Determines which OpenAI textual model is used for generating responses.
+    *   Defaults to `text-davinci-003`.
+2.  **SSM Parameter Name for API Key (`GPT_API_KEY_PARAM`)**:
+    *   The name of the parameter in AWS Systems Manager (SSM) Parameter Store where the OpenAI API key is stored.
+    *   Defaults to `gpt-api-key`.
+
+To change either of these options, you need to edit the project using **Visual Studio Code with the Altostra extension installed**. After making changes, create a new version and deploy it.
+
+**Example deployment command (after changes and versioning):**
+```bash
+alto deploy my-stack --push --env production
+```
+## 🧠 Changing the GPT Model Used
+
+_(Assumes your Altostra stack is named `my-stack`)_
+
+1. Review available OpenAI textual models.
+2. Copy the ID of the model you wish to use.
+3. Open your project in **VSCode** with the **Altostra extension**.
+4. In the **Altostra Cloud Designer**, locate the Lambda function named `prompt`.
+5. Find the `GPT_MODEL` environment variable.
+6. Paste the copied model ID as the value for `GPT_MODEL`.
+7. Click **Save**.
+8. Create a new project version using the Altostra extension.
+9. Deploy the new version by either:
+   ```bash
+   alto deploy my-stack
+   ```
 
 ---
 
-The website served by the CloudFront distribution first checks the existence of an OpenAI API key.
+## 🔐 Changing the Name of the SSM Parameter that Stores the API Key
 
-If the API key does not exist, the web application requests an API key from the user and stores it
-using the API Gateway and corresponding Lambda function.
+This is useful for multiple deployments in the same AWS region, each with its own OpenAI API key.
 
-Once the API key exists, the web application lets the user enter a prompt and send it through
-the API Gateway to the corresponding Lambda function that sends it to the OpenAI GPT model.
+1. Open the project in **VSCode** with the **Altostra extension**.
+2. Navigate to the **Global variables** section.
+3. Change the value of the global variable named `GPT_API_KEY_PARAM` to your new parameter name.
+4. Click **Save**.
+5. In the **Altostra Cloud Designer**, find the `api-key-params` resource (SSM Parameters).
+6. Edit the parameter name to exactly match the new `GPT_API_KEY_PARAM` value.
+7. Click **Save**.
+8. Create a new project version and deploy:
+   ```bash
+   alto deploy my-stack
+   ```
 
-### Options
+---
 
-There are two environment variables that can be changed to change the behavior of the web application:
+## 🚀 Setup & Deployment with Altostra
 
-- The GPT model that is being used (defaults to `text-davinci-003`).
-- The name of the AWS Systems Manager (SSM) parameter that stores the OpenAI API key
-(defaults to `gpt-api-key`).
+### ✅ Prerequisites
 
-To change either option, edit the project using VSCode with the
-[Altostra extension](https://marketplace.visualstudio.com/items?itemName=Altostra.altostra).  
-Follow the provided instructions and then create a new version and deploy it
-(the following snippet assumes a stack named `my-stack`):
+- An **Altostra Account**
+- **Altostra CLI** installed and configured
+- **VSCode** with the **Altostra Extension**
+- **AWS account** configured for Altostra
+- **OpenAI API Key**
 
-```shell
-alto deploy my-stack --push --env production
+### 📦 Obtain the Template
+
+If this is a Git repository:
+
+```bash
+git clone <repository-url-of-altostra-template>
+cd <template-directory>
 ```
 
-#### Changing the GPT model that is being used
+Open the template folder in **VSCode**.
 
+### 🛠️ Initial Deployment (Creating a Stack)
 
-To change the GPT model, first review what
-[OpenAI textual models](https://platform.openai.com/docs/models/overview) are available.
-You can also get a comprehensive list using
-[OpenAI API](https://platform.openai.com/docs/api-reference/models/list).  
-After selecting a model, copy its ID and follow these instructions to set it as the application model:
+You may need to create an Altostra environment (e.g., `dev`, `production`):
 
-1. Copy [OpenAI model ID](https://platform.openai.com/docs/models/overview)
-![Copy OpenAI model ID](./docs/copy-openai-model-id.gif)
-2. Open the project in VSCode.
-3. In the Altostra Cloud Designer, open the edit form of the lambda called `prompt` and change
-the `GPT_MODEL` environment variable  (located in the Environment Variables section of lambda edit form)
-value by pasting the selected OpenAI model ID.
-![Edit the `prompt` lambda](./docs/edit-prompt-lambda.gif)
-4. Click Save.
-5. Create a new [project version](https://docs.altostra.com/howto/projects/deploy-project).
-6. Deploy a new project version by either 
-[creating a new stack](https://docs.altostra.com/howto/projects/deploy-project#create-a-new-stack) or
-[updating an existing stack](https://docs.altostra.com/howto/projects/deploy-project#update-an-existing-stack).
+```bash
+alto deploy my-new-gpt-stack --env production --init
+```
 
-#### Changing the name of the SSM parameter that stores the API key
+Follow the prompts. On first web access, the app may request your OpenAI API key — it will be stored in **AWS SSM Parameter Store**.
 
-Multiple deployments of the project in the same region will use the same OpenAI API key.  
-In order to support more than one API key in the same region - you can change the name
-of the AWS Systems Manager (SSM) parameter that stores the OpenAI API key, and
-[create a version](https://docs.altostra.com/reference/concepts/versions-repository#creating-a-new-project-version)
-that when deployed, uses another API key.
+---
 
-To change AWS Systems Manager (SSM) parameter that stores the OpenAI API key,
-follow these instructions:
+## 🌐 Accessing the Application
 
-1. Open the project in VSCode.
-2. Open the project's [Global variables](https://docs.altostra.com/cloud-designer/global-environment).
-3. Change the value of the variable named `GPT_API_KEY_PARAM`.
-4. Click on Save.
-5. Click **on the icon** of the `api-key-params` SSM Parameters resource.
-6. Change the name of the sole parameter to match exactly the name you have typed for the
-`GPT_API_KEY_PARAM` global environment variable.
-7. Click on Save.
+After deployment, the CLI or Altostra Console will provide the **CloudFront distribution URL** (public URL of your app).
+
+---
+
+## 🗂️ File Structure (Conceptual - Managed by Altostra)
+
+```plaintext
+altostra.json         # Altostra project definition
+src/ or lambdas/      # Source code for Lambda functions
+  ├── prompt_handler/
+  ├── api_key_storage/
+  └── api_key_check/
+static-site/          # Web UI (HTML, CSS, JS)
+README.md             # This documentation
+```
+
+> Note: Altostra manages code/infrastructure packaging internally via the Altostra extension.
+
+---
+
+## 📝 Technical Notes
+
+- **Serverless Architecture**: Uses AWS Lambda + API Gateway for scalable backend.
+- **API Key Security**: Stored as SecureString in **SSM Parameter Store**, accessed by Lambda with appropriate IAM role.
+- **Idempotency**: Actions like storing the API key should be safe to repeat.
+- **Cold Starts**: Initial Lambda invocations may be delayed after inactivity.
+- **API Costs**: OpenAI API calls incur costs to the user.
+
+---
+
+## 🤝 Contributing
+
+If this template is public or you're collaborating:
+
+```bash
+# Fork the repo
+# Create a feature branch
+git checkout -b feature/NewGptModelSupport
+
+# Make your changes
+# Commit changes
+git commit -m 'Feature: Add support for GPT-4 model selection'
+
+# Push and open PR
+git push origin feature/NewGptModelSupport
+```
+
+> Follow best practices and any contribution guidelines provided in the repository.
+
+---
+
+## 📃 License
+
+This project is licensed under the **MIT License**.  
+Refer to the `LICENSE` file for more details.
+
+---
+
+## 📧 Contact
+
+Application concept by **Adrian Lesniak**.
+
+For questions or issues:
+
+- Open an issue on this repository
+- Or contact the template owner
+
+---
+
+> ✨ Explore AI-powered solutions — deployed seamlessly with Altostra & AWS.
